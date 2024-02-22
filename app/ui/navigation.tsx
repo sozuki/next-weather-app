@@ -2,9 +2,19 @@
 import Link from "next/link";
 import {useParams, usePathname, useRouter} from "next/navigation";
 import {useScroll, motion, useMotionValueEvent} from "framer-motion";
-import {useEffect, useRef, useState} from "react";
+import {MutableRefObject, useEffect, useRef, useState} from "react";
 import clsx from "clsx";
 
+
+export function Navigation() {
+  const navDayRef = useRef(null);
+  return (
+    <div className=" w-full h-40 flex flex-col gap-8">
+      <NavSection navDayRef={navDayRef}/>
+      <NavDay navDayRef={navDayRef}/>
+    </div>
+  )
+}
 
 interface Item {
   title: string,
@@ -78,9 +88,9 @@ const sectionVariants: Variants = {
   },
 };
 
-export function NavSection() {
+export function NavSection({navDayRef}: { navDayRef: MutableRefObject<any> }) {
   const {city, day} = useParams<{ city: string; day: string }>();
-  const defaultDay = day || "today";
+  const [defaultDay, setDefaultDay] = useState(day);
   const pathname = usePathname();
   const segments = pathname.split('/');
   let section = segments[segments.length - 1];
@@ -90,9 +100,9 @@ export function NavSection() {
   });
   
   // animation
-  const ref = useRef(null);
+  const navSectionRef = useRef(null);
   const {scrollXProgress} = useScroll({
-    container: ref
+    container: navSectionRef
   });
   
   const [selectedSection, setSelectedSection] = useState(section || "main");
@@ -102,6 +112,10 @@ export function NavSection() {
     sectionConstraints.forEach(constraint => {
       if (roundedX >= constraint.start && roundedX <= constraint.end) {
         setSelectedSection(constraint.section);
+        if (!defaultDay) {
+          setDefaultDay("today");
+          scrollToThisItem(1, navDayRef); //TODO: scroll to TODAY section in the bottom nav ( need to cal the same scroll function, but in another component)
+        }
         if (constraint.section === "main" && pathname !== `/${city}/main/${defaultDay}`) {
           router.replace(`/${city}/main/${defaultDay}`);
         } else if (constraint.section !== "main" && pathname !== `/${city}/main/${defaultDay}/${constraint.section}`) {
@@ -111,23 +125,31 @@ export function NavSection() {
     })
   })
   
-  function handleClick() {
-    // scrollXProgress
-    // TODO: scroll to the section and make this section active
+  
+  function scrollToThisItem(toIndex: number, ref: MutableRefObject<any>) {
+    const currentIndex = sectionConstraints.findIndex(item => item.section === selectedSection);
+    if (toIndex > currentIndex) {
+      if (ref.current) {
+        ref.current.scrollLeft += window.innerWidth / 3;
+      }
+    } else if (toIndex < currentIndex) {
+      if (ref.current) ref.current.scrollLeft -= window.innerWidth / 3;
+    }
   }
   
   return (
     <>
-      <ul ref={ref}
+      <ul ref={navSectionRef} style={{scrollBehavior: "smooth"}}
           className="flex flex-nowrap snap-x snap-mandatory overflow-x-scroll gap-8 text-white items-center scrollbar-w-0 select-none h-16">
         {sections.map((section, i) => {
             const isActive = section.title.toLowerCase() === selectedSection;
             
             return (
-              <motion.li key={i} onClick={handleClick}
+              <motion.li key={i}
                          initial={"inactive"}
                          animate={isActive ? "active" : "inactive"}
                          variants={sectionVariants}
+                         onClick={() => scrollToThisItem(i, navSectionRef)}
                 // whileHover={{ scale: [null, 1.3, 1.2] }}
                 // className={clsx("first:ml-[30vw] last:mr-[30vw] border-white border-2 min-w-[40vw] flex justify-center items-center p-2 snap-center select-none", isActive && "h-20")}>
                          className={clsx("first:ml-[30vw] last:mr-[30vw] min-w-[40vw] flex justify-center items-center p-2 snap-center select-none")}>
@@ -186,7 +208,7 @@ const dayConstraints: DayConstraint[] = [
 ]
 
 
-export function NavDay() {
+export function NavDay({navDayRef}: { navDayRef: MutableRefObject<any> }) {
   // routes handling
   const {city, day} = useParams<{ city: string; day: string }>();
   const pathname = usePathname();
@@ -197,33 +219,50 @@ export function NavDay() {
   })
   
   // animation
-  const ref = useRef(null);
   const {scrollXProgress} = useScroll({
-    container: ref
+    container: navDayRef
   });
-  
   const [selectedDay, setSelectedDay] = useState(day);
-  const router = useRouter();
-  useMotionValueEvent(scrollXProgress, "change", (latest) => {
-    const roundedX = Math.round(latest * 100) / 100;
+  
+  const [isScrolled, setIsScrolled] = useState(false)
+  function scrollToTheChosenDay() {
+    let index: number = 0;
     dayConstraints.forEach(constraint => {
-      if (roundedX >= constraint.start && roundedX <= constraint.end) {
-        setSelectedDay(constraint.day);
-        if (pathname !== `/${city}/main/${constraint.day}/${section}`) {
-          console.log(section)
-          router.replace(`/${city}/main/${constraint.day}/${section}`);
+      if (constraint.day === selectedDay && scrollXProgress.current !== constraint.base) {
+        for (let i: number = 0; i <= index; i++) {
+          navDayRef.current.scrollLeft += window.innerWidth / 3;
         }
       }
+      index++;
     })
+    setIsScrolled(true);
+  }
+  
+  useEffect(() => {
+    if (!isScrolled) scrollToTheChosenDay();
+  }, []);
+  const router = useRouter();
+  useMotionValueEvent(scrollXProgress, "change", (latest) => {
+    if (isScrolled) {
+      const roundedX = Math.round(latest * 100) / 100;
+      dayConstraints.forEach(constraint => {
+        if (roundedX >= constraint.start && roundedX <= constraint.end) {
+          setSelectedDay(constraint.day);
+          if (pathname !== `/${city}/main/${constraint.day}/${section}`) {
+            router.replace(`/${city}/main/${constraint.day}/${section}`);
+          }
+        }
+      })
+    }
   })
   
-  function scrollToThisItem(toIndex: number) {
+  function scrollToThisItem(toIndex: number, ref: MutableRefObject<any>) {
     const currentIndex = dayConstraints.findIndex(item => item.day === selectedDay);
     if (toIndex > currentIndex) {
       if (ref.current) {
         ref.current.scrollLeft += window.innerWidth / 3;
       }
-    }else if (toIndex < currentIndex) {
+    } else if (toIndex < currentIndex) {
       if (ref.current) ref.current.scrollLeft -= window.innerWidth / 3;
     }
   }
@@ -232,7 +271,7 @@ export function NavDay() {
     <ul
       className="flex flex-nowrap snap-x snap-mandatory overflow-x-scroll gap-8 text-red-700 items-center scrollbar-w-0 select-none h-16"
       style={{scrollBehavior: "smooth"}}
-      ref={ref}>
+      ref={navDayRef}>
       {days.map((day, i) => {
         const isActive = day.title.toLowerCase().replace(/\s/g, '') === selectedDay;
         return (
@@ -241,7 +280,7 @@ export function NavDay() {
                      className={clsx("first:ml-[30vw] last:mr-[30vw] border-2 min-w-[40vw] flex justify-center items-center p-2 snap-center select-none ")}
                      variants={dayVariants}
                      animate={isActive ? "active" : "inactive"}
-                     onClick={() => scrollToThisItem(i)}
+                     onClick={() => scrollToThisItem(i, navDayRef)}
           >
             {/*<Link href={`/${city}/main/${day.link}/${section}`}>*/}
             {day.title}
