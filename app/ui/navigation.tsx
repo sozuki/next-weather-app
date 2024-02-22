@@ -136,7 +136,6 @@ export function NavSection({navDayRef}: { navDayRef: MutableRefObject<any> }) {
       if (ref.current) ref.current.scrollLeft -= window.innerWidth / 3;
     }
   }
-  
   return (
     <>
       <ul ref={navSectionRef} style={{scrollBehavior: "smooth"}}
@@ -225,16 +224,16 @@ export function NavDay({navDayRef}: { navDayRef: MutableRefObject<any> }) {
   const [selectedDay, setSelectedDay] = useState(day);
   
   const [isScrolled, setIsScrolled] = useState(false)
+  
   function scrollToTheChosenDay() {
-    let index: number = 0;
+    let index: number = 1;
     dayConstraints.forEach(constraint => {
-      if (constraint.day === selectedDay && scrollXProgress.current !== constraint.base) {
-        for (let i: number = 0; i <= index; i++) {
-          navDayRef.current.scrollLeft += window.innerWidth / 3;
+        if (constraint.day === selectedDay && scrollXProgress.current !== constraint.base) {
+          scrollToThisItem(index, navDayRef);
         }
+        index++;
       }
-      index++;
-    })
+    )
     setIsScrolled(true);
   }
   
