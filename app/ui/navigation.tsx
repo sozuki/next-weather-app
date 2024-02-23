@@ -8,9 +8,13 @@ import clsx from "clsx";
 
 export function Navigation() {
   const navDayRef = useRef(null);
+  const {day} = useParams();
   return (
-    <div className=" w-full h-40 flex flex-col gap-8">
-      <NavSection navDayRef={navDayRef}/>
+    <div className=" w-full h-40 flex flex-col gap-8 justify-end">
+      {day !== "7days" ? <NavSection navDayRef={navDayRef}/>:
+      <div className="">
+        {/* hides navSection and prevents layout shift */}
+      </div>}
       <NavDay navDayRef={navDayRef}/>
     </div>
   )

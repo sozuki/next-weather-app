@@ -9,7 +9,7 @@ export default function RootLayout({
 }>) {
   return (
     <div className="min-h-screen min-w-full flex flex-col items-center justify-center pb-20 pt-4 bg-black ">
-      <div className="border-amber-50 grow w-full">
+      <div className="border-amber-50 grow w-full flex flex-col">
         {children}
       </div>
       <Navigation />

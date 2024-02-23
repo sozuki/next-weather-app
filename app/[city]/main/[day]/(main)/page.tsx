@@ -4,9 +4,9 @@ import {GeneralInfo} from "@/app/ui/main/generalInfo";
 
 export default function Page() {
   return (
-    <div className="flex flex-col px-6">
-      <SearchIcon />
-      <GeneralInfo />
+    <div className="grow pb-4 flex flex-col px-6 justify-around" style={{alignContent: "space-around"}}>
+      <SearchIcon/>
+      <GeneralInfo/>
     </div>
   )
 }
