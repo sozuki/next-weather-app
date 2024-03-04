@@ -1,6 +1,5 @@
 import {Search} from "@/app/ui/search";
-import {Cities} from "@/app/ui/cities";
-import {getCities} from "@/app/lib/data";
+import {CitiesLoader} from "@/app/ui/cities";
 
 export default function Page({searchParams}: {
   searchParams?: {
@@ -14,7 +13,7 @@ export default function Page({searchParams}: {
         <Search search={search}/>
       </div>
       <div className="">
-        <Cities search={search}/>
+        <CitiesLoader search={search}/>
       </div>
     </div>
   );
