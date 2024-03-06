@@ -2,9 +2,7 @@
 import Link from "next/link";
 import useSWR from "swr";
 import {useInView} from "react-intersection-observer";
-import useSWRInfinite from "swr/infinite";
 import React, {useEffect, useRef, useState, forwardRef} from "react";
-// import {getCities} from "@/app/lib/data";
 
 const PAGE_SIZE: number = 10;
 
@@ -19,29 +17,38 @@ interface City {
 
 const fetcher = (...args: Parameters<typeof fetch>) => fetch(...args).then((res) => res.json());
 
-export function CitiesLoader({search}: { search?: string }) {
-  const [cnt, setCnt] = useState(2)
+export function CitiesLoader({search, baseUrl}: { search?: string, baseUrl: string | undefined }) {
+  const [cnt, setCnt] = useState(2);
+  const [availablePages, setAvailablePages] = useState<number>(0);
   const [ref, inView, entry] = useInView()
+  const {data: total, isLoading} = useSWR(`${baseUrl}/cities/total/${search}`, fetcher);
   useEffect(() => {
-    if (inView) setCnt(prev => prev+1);
-  }, [inView]);
+    setAvailablePages(Math.floor(total?.data/PAGE_SIZE));
+  }, [total]);
+  
+  useEffect(() => {
+    if (inView && cnt <= availablePages) setCnt(prev => prev+1);
+  }, [inView, cnt, availablePages]);
+  
   const pages = []
   for (let i = 1; i < cnt; i++) {
-    pages.push(<Cities index={i} key={i} search={search}/>)
+    pages.push(<Cities index={i} key={i} search={search} baseUrl={baseUrl}/>)
   }
+  
+  if (isLoading) return <CitySkeletons amount={PAGE_SIZE}/>
   return (
     <div className="flex flex-col gap-8">
       {pages}
-      <CitySkeletons amount={PAGE_SIZE} ref={ref}/>
+      {pages.length < availablePages ? <CitySkeletons amount={PAGE_SIZE} ref={ref}/> : null}
     </div>
   )
 }
 
-export function Cities({search, index}: { search?: string, index: number }) {
+export function Cities({search, index, baseUrl}: { search?: string, index: number, baseUrl:string | undefined}) {
   const city = search || "";
-  const {data: response, error} = useSWR(`http://localhost:4000/cities/${city}?page=${index}&limit=${PAGE_SIZE}`, fetcher)
+  const {data: response, error} = useSWR(`${baseUrl}/cities/${city}?page=${index}&limit=${PAGE_SIZE}`, fetcher)
   
-  if (error) return <div>Failed to load</div>
+  if (error) return <div>Please, try again</div>
   if (!response) return <CitySkeletons amount={PAGE_SIZE}/>
   return (
     <div className="flex flex-col gap-8">

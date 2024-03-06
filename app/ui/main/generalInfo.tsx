@@ -17,7 +17,7 @@ export const timeZones: timeZones[] = [
   }
 ];
 const months: string[] = [
-  "", "January", "February", "March", "April", "May", "June", // "" 0 month is not valid
+  "", "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
@@ -29,18 +29,18 @@ export function getCityTimezone(city: string): string {
 }
 
 
-export function GeneralInfo() {
+export function GeneralInfo({baseUrl}: { baseUrl: string | undefined }) {
   const {day} = useParams();
   return (
     <div className="flex flex-col w-full pb-2 gap-16 pt-4">
       {day !== "7days" ?
         <>
-          <DateC/>
+          <DateC baseUrl={baseUrl}/>
           <Thermometer/>
           <WarningAndAirQuality/>
         </>
         :
-        <Week />
+        <Week baseUrl={baseUrl}/>
       }
     
     </div>
@@ -66,7 +66,8 @@ export function Thermometer() {
 }
 
 
-export function DateC() {
+export function DateC({baseUrl}: { baseUrl: string | undefined }) {
+  
   const {day} = useParams();
   const timeZone: string = getCityTimezone(usePathname().split('/')[1]);
   const options = {timeZone: timeZone, hour12: false};
@@ -120,15 +121,16 @@ export function DayOfWeek() {
         <div>THUNDERSTORM</div>
       </div>
       <div className="h-10 pl-2">
-        <Icon icon="carbon:snow"  style={{color: "white"}} className="w-full h-full" />
+        <Icon icon="carbon:snow" style={{color: "white"}} className="w-full h-full"/>
       </div>
     </div>
   )
 }
-export function Week() {
+
+export function Week({baseUrl}: { baseUrl: string | undefined }) {
   return (
     <div className="flex flex-col gap-4">
-      <DateC/>
+      <DateC baseUrl={baseUrl}/>
       <div className=""></div>
       <DayOfWeek/>
       <DayOfWeek/>
